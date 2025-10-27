@@ -1,0 +1,11 @@
+{ "idd":"SNTN:IDC:123456789",
+  "Puerto": "SNTN:PORT:ES46",
+  "Contenedores": [
+      { "contenedor":"SNTN:DOCKER:0a86349f-6acb-244a32bc328a", "agencia":"SNTN:AN:PackTrans"},
+      { "contenedor":"SNTN:DOCKER:7d5ee1eb-dd79-8b151869c1ae", "agencia":"SNTN:AN:PackTrans"},
+      { "contenedor":"SNTN:DOCKER:2a478320-dbb1-6e05d6825511", "agencia":"SNTN:AN:SeaTrans"},
+      { "contenedor":"SNTN:DOCKER:55b01983-8bd1-50c61d17c757", "agencia":"SNTN:AN:SeaTrans"},
+      { "contenedor":"SNTN:DOCKER:8417d8ef-066d-13b86f4dc691", "agencia":"SNTN:AN:WorldPort"},
+      { "contenedor":"SNTN:DOCKER:43d4246b-bb8d-4d6f99855a1b", "agencia":"SNTN:AN:WorldPort"}
+  ]
+}

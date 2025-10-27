@@ -1,0 +1,52 @@
+{
+  "idd": "SNTN:SDC:123456789",
+
+  "Puerto": {
+    "id": "SNTN:PORT:ES46",
+    "nombre": "Puerto de Valencia"
+  },
+
+  "AgenciaNaviera": {
+    "id": "SNTN:AN:SeaTrans",
+    "nombre": "SeaTrans",
+    "pais": "IE"
+  },
+  "Contenedores": [
+      {
+        "idc": "2SNTN:DOCKER:a478320-dbb1-463a-9bf1-6e05d6825511",
+        "tipo": "refrigerado",
+        "peso": 1000,
+        "precinto": "123456789",
+        "dimensiones": "std-20",
+        "Traslado": {
+          "FechaMaxEntrega": "15/10/2025 11:52:00",
+          "Destino": {
+            "direccion": "Carrer de Pelai, 6",
+            "codigoPostal": "46007",
+            "ciudad": "Valencia",
+            "pais": "ES"
+          }
+        }
+      },
+      {
+        "idc": "SNTN:DOCKER:55b01983-8bd1-4d5f-951b-50c61d17c757",
+        "tipo": "imo-imdg",
+        "peso": 2500,
+        "precinto": "123456789",
+        "dimensiones": "std-40",
+        "Traslado": {
+          "FechaMaxEntrega": "9/10/2025 11:52:00",
+          "Destino": {
+            "direccion": "Carrer Navellos, 9",
+            "codigoPostal": "46003",
+            "ciudad": "Valencia",
+            "pais": "ES"
+          }
+        }
+      }
+  ]
+}
+
+
+
+

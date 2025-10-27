@@ -1,0 +1,14 @@
+<SNTN_InformeDescargaContenedores idd="SNTN:IDC:123456789" version="1.0" xmlns="http://www.sntn.es/standards">
+
+    <Puerto id="SNTN:PORT:ES46"/>
+
+    <Contenedores>
+      <Contenedor id="SNTN:DOCKER:0a86349f-6acb-40d0-bb6e-244a32bc328a" agencia="SNTN:AN:PackTrans"/>
+      <Contenedor id="SNTN:DOCKER:7d5ee1eb-dd79-4885-8589-8b151869c1ae" agencia="SNTN:AN:PackTrans"/>
+      <Contenedor id="SNTN:DOCKER:2a478320-dbb1-463a-9bf1-6e05d6825511" agencia="SNTN:AN:SeaTrans"/>
+      <Contenedor id="SNTN:DOCKER:55b01983-8bd1-4d5f-951b-50c61d17c757" agencia="SNTN:AN:SeaTrans"/>
+      <Contenedor id="SNTN:DOCKER:8417d8ef-066d-4814-979e-13b86f4dc691" agencia="SNTN:AN:WorldPort"/>
+      <Contenedor id="SNTN:DOCKER:43d4246b-bb8d-478f-8b40-4d6f99855a1b" agencia="SNTN:AN:WorldPort"/>
+    </Contenedores>
+
+</SNTN_InformeDescargaContenedores>

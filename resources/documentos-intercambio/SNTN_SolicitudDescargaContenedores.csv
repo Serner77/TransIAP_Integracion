@@ -1,0 +1,5 @@
+SNTN:SDC:345678901
+SNTN:PORT:ES46, Puerto de Valencia
+SNTN:AN:WorldPort, WorldPort, ES
+SNTN:DOCKER:8417d8ef-066d-4814-979e-13b86f4dc691, cisterna, 1200, 123456789, std-20
+SNTN:DOCKER:43d4246b-bb8d-478f-8b40-4d6f99855a1b, open-top, 800, 123456789, std-20, 10/10/2025 13:42:00, "Carrer del Marqués de Sant Joan, 32", 46015, Valencia, ES

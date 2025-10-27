@@ -1,0 +1,20 @@
+{
+  "idd" : "SNTN:IST:123456789",
+  "Puerto": "SNTN:PORT:ES46",
+  "SolicitudesTraslado": [
+    {  "agencia": "SNTN:AN:PackTrans",
+        "Contenedores" : [ "SNTN:DOCKER:7d5ee1eb-dd79-4885-8589-8b151869c1ae" ]
+    },
+    {  "agencia": "SNTN:AN:SeaTrans",
+        "Contenedores" : [ "SNTN:DOCKER:2a478320-dbb1-463a-9bf1-6e05d6825511", "SNTN:DOCKER:55b01983-8bd1-4d5f-951b-50c61d17c757" ]
+    },
+    {  "agencia": "SNTN:AN:WorldPort",
+        "Contenedores" : [ "SNTN:DOCKER:43d4246b-bb8d-478f-8b40-4d6f99855a1b" ]
+    }
+  ]
+
+}
+
+
+
+

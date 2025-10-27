@@ -1,0 +1,43 @@
+{
+  "idd": "SNTN:SDC:3456397",
+
+  "Puerto": {
+    "id": "SNTN:PORT:ES46",
+    "nombre": "Puerto de Valencia"
+  },
+
+  "AgenciaNaviera": {
+    "id": "SNTN:AN:WorldPort",
+    "nombre": "WorldPort",
+    "pais": "ES"
+  },
+  "Contenedores": [
+      {
+        "idc": "SNTN:DOCKER:b49ac28d-4a8e-4cae-b5c4-fce9f8e27fd1",
+        "tipo": "cisterna",
+        "peso": 1200,
+        "precinto": "56789123",
+        "dimensiones": "std-20",
+        "Traslado": {
+          "FechaMaxEntrega": "16/10/2025 10:00:00",
+          "Destino": {
+            "direccion": "Carrer Sant Pere, 59",
+            "codigoPostal": "46011",
+            "ciudad": "Valencia",
+            "pais": "ES"
+          }
+        }
+      },
+      {
+        "idc": "SNTN:DOCKER:9a53bb10-3eee-4cd6-a40a-8133c43f98da",
+        "tipo": "imo-imdg",
+        "peso": 700,
+        "precinto": "1236789",
+        "dimensiones": "std-40"
+      }
+  ]
+}
+
+
+
+

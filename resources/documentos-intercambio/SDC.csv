@@ -1,0 +1,6 @@
+SNTN:SDC:345678901
+SNTN:PORT:ES46, Puerto de Valencia
+SNTN:AN:PackTrans, PackTrans, CN
+SNTN:DOCKER:b8114a04-9c2e-4aee-8d73-92e15c5d34cb, caja-movil, 800, 6789, std-20, 15/10/2025 11:00:00, "Camí de Vera, s/n", 46022, Valencia, ES
+SNTN:DOCKER:d85ccbc7-3bc1-49da-aa73-59d7f35f6cb0, carga-seca, 3000, 126734, HC-40, 16/10/2025 13:00:00, "Plaça de la Verge, 10", 46012, Valencia, ES
+SNTN:DOCKER:cf2a8fc6-1e08-43bb-b78e-064c7edccf2e, ventilado, 550, 34633, std-40

@@ -1,0 +1,47 @@
+<SNTN_SolicitudDescargaContenedores idd="SNTN:SDC:234567890" xmlns="http://www.sntn.es/standards">
+    <Puerto id="SNTN:PORT:ES46">
+        <nombre>Puerto de Valencia</nombre>
+    </Puerto>
+    <AgenciaNaviera id="SNTN:AN:SeaTrans">
+        <nombre>PackTrans</nombre>
+        <pais>IE</pais>
+    </AgenciaNaviera>
+    <Contenedores>
+        <Contenedor idc="SNTN:DOCKER:2d278207-6eeb-4527-8fb4-6da565ea61f5">
+            <tipo>refrigerado</tipo>
+            <peso>2200</peso>
+            <precinto>456789</precinto>
+            <dimensiones>std-20</dimensiones>
+        </Contenedor>
+        <Contenedor idc="SNTN:DOCKER:270e9a08-a144-41ad-b4ad-7e84e8147809">
+            <tipo>frigorifico</tipo>
+            <peso>900</peso>
+            <precinto>12389</precinto>
+            <dimensiones>std-40</dimensiones>
+            <Traslado>
+                <FechaMaxEntrega>19/10/2025 06:00:00</FechaMaxEntrega>
+                <Destino>
+                    <direccion>Avinguda Cardenal Benlloch, 108</direccion>
+                    <codigoPostal>46021</codigoPostal>
+                    <ciudad>Valencia</ciudad>
+                    <pais>ES</pais>
+                </Destino>
+            </Traslado>
+        </Contenedor>
+        <Contenedor idc="SNTN:DOCKER:d706b7ab-4c0c-46c8-82b5-4080030c8293">
+            <tipo>cisterna</tipo>
+            <peso>470</peso>
+            <precinto>38912</precinto>
+            <dimensiones>std-20</dimensiones>
+            <Traslado>
+                <FechaMaxEntrega>29/10/2025 20:00:00</FechaMaxEntrega>
+                <Destino>
+                    <direccion>Avinguda Blasco Ibànyes, 11</direccion>
+                    <codigoPostal>46020</codigoPostal>
+                    <ciudad>Valencia</ciudad>
+                    <pais>ES</pais>
+                </Destino>
+            </Traslado>
+        </Contenedor>
+    </Contenedores>
+</SNTN_SolicitudDescargaContenedores>
