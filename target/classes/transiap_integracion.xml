@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -9,10 +9,11 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
-http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
-	<db:mysql-config name="MySQL_Configuration" host="localhost" port="3306" database="transiap" doc:name="MySQL Configuration"/>
 	<file:connector name="File1" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
+	<db:mysql-config name="MySQL_Configuration" host="127.0.0.1" port="3306" user="root" database="transiap" doc:name="MySQL Configuration"/>
 	<flow name="sdct-file-inbound-flow">
 		<file:inbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\documentos-intercambio" moveToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\procesados" connector-ref="File1" fileAge="1000" responseTimeout="10000" doc:name="File Listener"/>
 		<choice doc:name="Choice Router">
@@ -32,127 +33,123 @@ http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee
 				</dw:transform-message>
 			</when>
 			<when expression="#[message.inboundProperties.'originalFilename' contains '.json']">
-				<dw:transform-message doc:name="Transform JSON to Object">
+
+				<dw:transform-message doc:name="Transform JSON to Object" metadata:id="29567b72-171e-4cca-ad21-2a3c830c1e3b">
+					<dw:input-payload mimeType="application/json"/>
 					<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
 {
-    idDocumento: payload.idd replace "SNTN:SDC:" with "",
-    puerto: {
-        id: payload.Puerto.id replace "SNTN:PORT:" with "",
-        nombre: payload.Puerto.nombre
-    },
-    agencia: {
-        id: payload.AgenciaNaviera.id replace "SNTN:AN:" with "",
-        nombre: payload.AgenciaNaviera.nombre,
-        pais: payload.AgenciaNaviera.pais
-    },
-    contenedores: payload.Contenedores map {
-        id: $.idc replace "SNTN:DOCKER:" with "",
-        tipo: $.tipo,
-        peso: $.peso,
-        precinto: $.precinto,
-        dimension: $.dimensiones,
-        traslado: $.Traslado when $.Traslado != null otherwise null
-    }
+	idSolicitud: (payload.idd splitBy "SNTN:SDC:" joinBy "") as :number,
+	fecha: now as :string {format: "dd/MM/yyyy HH:mm:ss"},
+	idPuerto: (payload.Puerto.id splitBy "SNTN:PORT:" joinBy "") as :string,
+	nombrePuerto: payload.Puerto.nombre,
+	idAgencia: (payload.AgenciaNaviera.id splitBy "SNTN:AN:" joinBy "") as :string,
+	nombreAgencia: payload.AgenciaNaviera.nombre,
+	paisAgencia: payload.AgenciaNaviera.pais,
+	contenedores: payload.Contenedores map ((contenedor , indexOfContenedor) -> {
+		idContenedor: (contenedor.idc splitBy "SNTN:DOCKER:" joinBy "") as :string,
+		tipoContenedor: contenedor.tipo,
+		pesoContenedor: contenedor.peso,
+		precintoContenedor: contenedor.precinto,
+		dimensionesContenedor: contenedor.dimensiones,
+		
+		trasladoFechaMaxEntrega: contenedor.Traslado.FechaMaxEntrega,
+		trasladoDireccion: contenedor.Traslado.Destino.direccion,
+		trasladoCodigoPostal: contenedor.Traslado.Destino.codigoPostal,
+		trasladoCiudad: contenedor.Traslado.Destino.ciudad,
+		trasladoPais: contenedor.Traslado.Destino.pais
+	})
 }]]></dw:set-payload>
 				</dw:transform-message>
+
 			</when>
 			<when expression="#[message.inboundProperties.'originalFilename' contains '.xml']">
-				<dw:transform-message doc:name="Transform XML to Object">
+				<dw:transform-message doc:name="Transform XML to Object" metadata:id="d260b6d1-2ed6-4b61-9c31-e5caa6b335b4">
+					<dw:input-payload mimeType="application/xml"/>
 					<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
+%namespace ns0 http://www.sntn.es/standards
 ---
 {
-    idDocumento: payload.@idd replace "SNTN:SDC:" with "",
-    puerto: {
-        id: payload.Puerto.@id replace "SNTN:PORT:" with "",
-        nombre: payload.Puerto.nombre
-    },
-    agencia: {
-        id: payload.AgenciaNaviera.@id replace "SNTN:AN:" with "",
-        nombre: payload.AgenciaNaviera.nombre,
-        pais: payload.AgenciaNaviera.pais
-    },
-    contenedores: payload.Contenedores.*Contenedor map {
-        id: $.@idc replace "SNTN:DOCKER:" with "",
-        tipo: $.tipo,
-        peso: $.peso as :number,
-        precinto: $.precinto,
-        dimension: $.dimensiones,
-        traslado: $.Traslado when $.Traslado != null otherwise null
-    }
+	idSolicitud: (payload.ns0#SNTN_SolicitudDescargaContenedores.@idd splitBy "SNTN:SDC:" joinBy "") as :number,
+	fecha: now as :string {format: "dd/MM/yyyy HH:mm:ss"},
+	idPuerto: (payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#Puerto.@id splitBy "SNTN:PORT:" joinBy "") as :string,
+	nombrePuerto: payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#Puerto.ns0#nombre,
+	idAgencia: (payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#AgenciaNaviera.@id splitBy "SNTN:AN:" joinBy "") as :string,
+	nombreAgencia: payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#AgenciaNaviera.ns0#nombre,
+	paisAgencia: payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#AgenciaNaviera.ns0#pais,
+	contenedores: payload.ns0#SNTN_SolicitudDescargaContenedores.ns0#Contenedores.*ns0#Contenedor map ((contenedor , indexOfContenedor) -> {
+		idContenedor: (contenedor.@idc splitBy "SNTN:DOCKER:" joinBy "") as :string,
+		tipoContenedor: contenedor.ns0#tipo,
+		pesoContenedor: contenedor.ns0#peso,
+		precintoContenedor: contenedor.ns0#precinto as :string,
+		dimensionesContenedor: contenedor.ns0#dimensiones,
+		trasladoFechaMaxEntrega: contenedor.ns0#Traslado.ns0#FechaMaxEntrega,
+		trasladoDireccion: contenedor.ns0#Traslado.ns0#Destino.ns0#direccion,
+		trasladoCodigoPostal: contenedor.ns0#Traslado.ns0#Destino.ns0#codigoPostal,
+		trasladoCiudad: contenedor.ns0#Traslado.ns0#Destino.ns0#ciudad,
+		trasladoPais: contenedor.ns0#Traslado.ns0#Destino.ns0#pais
+	})
 }]]></dw:set-payload>
 				</dw:transform-message>
 			</when>
+			<otherwise>
+				<logger message="Archivo no v&#225;lido." level="INFO" doc:name="Logger"/>
+			</otherwise>
 		</choice>
+		<set-variable variableName="payload" value="#[payload]" doc:name="Variable Object"/>
 		<db:insert config-ref="MySQL_Configuration" doc:name="Insert Solicitud Descarga">
-			<db:parameterized-query><![CDATA[INSERT INTO solicitud_descarga (
-    id_solicitud,
-    fecha_solicitud,
-    puerto,
-    tipo_descarga
-)
+			<db:parameterized-query><![CDATA[INSERT INTO solicitud_descarga (id, fecha, naviera)
 VALUES (
-    #[payload.solicitudDescarga.idSolicitud],
-    #[server.dateTime],
-    #[payload.solicitudDescarga.puerto],
-    #[payload.solicitudDescarga.tipoDescarga]
+  #[payload.idSolicitud],
+  #[payload.fecha],
+  #[payload.idAgencia]
 );]]></db:parameterized-query>
 		</db:insert>
-		<foreach collection="payload.contenedores" doc:name="Process Contenedores">
+		<foreach collection="#[flowVars.payload.contenedores]" doc:name="For Each">
+			<set-variable variableName="contenedor" value="#[payload]" doc:name="Variable contenedor"/>
 			<db:insert config-ref="MySQL_Configuration" doc:name="Insert Contenedor">
-				<db:parameterized-query><![CDATA[INSERT INTO contenedor (
-    id_contenedor,
-    id_solicitud,
-    tipo,
-    peso,
-    estado
-)
+				<db:parameterized-query><![CDATA[INSERT INTO contenedor (idc, tipo, peso, dimension, precinto, descarga)
 VALUES (
-    #[payload.idContenedor],
-    #[flowVars.id_solicitud],
-    #[payload.tipo],
-    #[payload.peso],
-    #[payload.estado]
+  #[payload.idContenedor],
+  #[payload.tipoContenedor],
+  #[payload.pesoContenedor],
+  #[payload.dimensionesContenedor],
+  #[payload.precintoContenedor],
+  #[flowVars.payload.idSolicitud]
 );]]></db:parameterized-query>
 			</db:insert>
 			<choice doc:name="Choice">
-				<when expression="payload.traslado != null">
+				<when expression="#[flowVars.contenedor.trasladoDireccion != null]">
+					<set-variable variableName="idDireccion" value="#[java.util.UUID.randomUUID().toString()]" doc:name="Variable idDireccion"/>
 					<db:insert config-ref="MySQL_Configuration" doc:name="Insert Direccion">
-						<db:parameterized-query><![CDATA[INSERT INTO direccion (
-    id_direccion,
-    id_contenedor,
-    calle,
-    ciudad,
-    pais
-)
+						<db:parameterized-query><![CDATA[INSERT INTO direccion (id, direccion, cp, ciudad, codigo_pais) 
 VALUES (
-    #[UUID.randomUUID().toString()],
-    #[payload.idContenedor],
-    #[payload.direccion.calle],
-    #[payload.direccion.ciudad],
-    #[payload.direccion.pais]
+    #[flowVars.idDireccion], 
+    #[flowVars.contenedor.trasladoDireccion], 
+    #[flowVars.contenedor.trasladoCodigoPostal],
+    #[flowVars.contenedor.trasladoCiudad],
+    #[flowVars.contenedor.trasladoPais]
 );]]></db:parameterized-query>
 					</db:insert>
 					<db:insert config-ref="MySQL_Configuration" doc:name="Insert Traslado">
-						<db:parameterized-query><![CDATA[INSERT INTO traslado (
-    id_traslado,
-    id_contenedor,
-    origen,
-    destino,
-    fecha_traslado
-)
+						<db:parameterized-query><![CDATA[INSERT INTO traslado (idt, fechaEntrega, estado, destino, contenedor, ultima_ubicacion)
 VALUES (
     #[UUID.randomUUID().toString()],
-    #[payload.idContenedor],
-    #[payload.traslado.origen],
-    #[payload.traslado.destino],
-    #[server.dateTime]
+    #[flowVars.contenedor.trasladoFechaMaxEntrega],
+    #[ 'pendiente' ],
+    #[flowVars.idDireccion],
+    #[flowVars.contenedor.idContenedor],
+	NULL
 );]]></db:parameterized-query>
 					</db:insert>
 				</when>
+				<otherwise>
+					<logger message="Contenedor #[flowVars.contenedor.idContenedor] sin traslado." level="INFO" doc:name="Logger"/>
+				</otherwise>
 			</choice>
 		</foreach>
+
 	</flow>
 </mule>
