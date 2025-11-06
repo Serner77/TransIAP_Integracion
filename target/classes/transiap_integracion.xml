@@ -18,18 +18,33 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 		<file:inbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\documentos-intercambio" moveToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\procesados" connector-ref="File1" fileAge="1000" responseTimeout="10000" doc:name="File Listener"/>
 		<choice doc:name="Choice Router">
 			<when expression="#[message.inboundProperties.'originalFilename' contains '.csv']">
+				<set-payload value="#[payload]" mimeType="text/plain" doc:name="Set Payload"/>
 				<dw:transform-message doc:name="Transform CSV to Object" metadata:id="f03e7f67-d84e-473f-9181-8afd61cd20e2">
-					<dw:input-payload mimeType="application/csv"/>
+					<dw:input-payload mimeType="application/java" doc:sample="sample_data\list_csv.csv"/>
 					<dw:set-payload><![CDATA[%dw 1.0
-%output application/json
+%output application/java
 ---
 {
-	idd: payload.column_0 as :string,
-	Puerto: payload.column_1,
-	AgenciaNaviera: payload.column_2,
-	Contenedores: payload.column_3
-}
-]]></dw:set-payload>
+    idSolicitud: ((payload splitBy "\n")[0] splitBy ":")[2],
+    fecha: now as :string {format: "dd/MM/yyyy HH:mm:ss"},
+    idPuerto: (((payload splitBy "\n")[1] splitBy ":")[2] splitBy ",")[0],
+    nombrePuerto: ((payload splitBy "\n")[1] splitBy ", ")[1],
+    idAgencia: (((payload splitBy "\n")[2] splitBy ":")[2] splitBy ",")[0],
+    nombreAgencia: ((payload splitBy "\n")[2] splitBy ", ")[1],
+    paisAgencia: ((payload splitBy "\n")[2] splitBy ", ")[2],
+    contenedores: (payload splitBy "\n")[3 to -1] map ((line, index) -> {
+        idContenedor: ((line splitBy ":")[2] splitBy ", ")[0],
+        tipoContenedor: (line splitBy ", ")[1],
+        pesoContenedor: (line splitBy ", ")[2],
+        precintoContenedor: (line splitBy ", ")[3],
+        dimensionesContenedor: (line splitBy ", ")[4],
+        trasladoFechaMaxEntrega: (line splitBy ", ")[5],
+        trasladoDireccion: ((line splitBy /,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/)[6]),
+        trasladoCodigoPostal: (line splitBy ", ")[8],
+        trasladoCiudad: (line splitBy ", ")[9],
+        trasladoPais: (line splitBy ", ")[10]
+    })
+}]]></dw:set-payload>
 				</dw:transform-message>
 			</when>
 			<when expression="#[message.inboundProperties.'originalFilename' contains '.json']">

@@ -2,13 +2,13 @@
     "inputMessageMetadata": {
         "messagePayload": {
             "connectorName": "#_custom_mule_metadata_type_#",
-            "typeId": "csv"
+            "typeId": "string"
         }
     },
     "outputMessageMetadata": {
         "messagePayload": {
             "connectorName": "#_custom_mule_metadata_type_#",
-            "typeId": "json"
+            "typeId": "javaObject"
         }
     },
     "id": "f03e7f67-d84e-473f-9181-8afd61cd20e2",
