@@ -14,10 +14,25 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 	<file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
 	<file:connector name="File1" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
 	<db:mysql-config name="MySQL_Configuration" host="127.0.0.1" port="3306" user="root" database="transiap" doc:name="MySQL Configuration"/>
-	<flow name="sdct-file-inbound-flow">
+	<http:request-config name="HTTP_Request_Configuration" host="personales.upv.es" port="80" doc:name="HTTP Request Configuration"/>
+	<flow name="entradaLocal-Flow">
 		<file:inbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\documentos-intercambio" moveToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\procesados" connector-ref="File1" fileAge="1000" responseTimeout="10000" doc:name="File Listener"/>
+		<set-variable variableName="tipoArchivo" value="#[(message.inboundProperties.'originalFilename' contains '.json') ? 'json' : (message.inboundProperties.'originalFilename' contains '.xml') ? 'xml' : (message.inboundProperties.'originalFilename' contains '.csv') ? 'csv' : 'desconocido']" doc:name="Variable tipoArchivo"/>
+		<flow-ref name="procesarSolicitud-Flow" doc:name="Flow Reference"/>
+	</flow>
+	<flow name="transiap_integracionFlow">
+		<poll doc:name="Poll">
+			<fixed-frequency-scheduler frequency="20" timeUnit="SECONDS"/>
+			<http:request config-ref="HTTP_Request_Configuration" path="/pedvalar/iap/TransIAP/SDC.json" method="GET" doc:name="HTTP"/>
+		</poll>
+		<object-to-string-transformer doc:name="Object to String"/>
+		<set-variable variableName="tipoArchivo" value="#[(message.inboundProperties.'Content-Type' contains 'json') ? 'json' : (message.inboundProperties.'Content-Type' contains 'xml') ? 'xml' : (message.inboundProperties.'Content-Type' contains 'csv') ? 'csv' : 'desconocido']" doc:name="Variable tipoArchivo"/>
+		<flow-ref name="procesarSolicitud-Flow" doc:name="Flow Reference"/>
+	</flow>
+	<flow name="procesarSolicitud-Flow">
+
 		<choice doc:name="Choice Router">
-			<when expression="#[message.inboundProperties.'originalFilename' contains '.csv']">
+			<when expression="#[flowVars.tipoArchivo == 'csv']">
 				<set-payload value="#[payload]" mimeType="text/plain" doc:name="Set Payload"/>
 				<dw:transform-message doc:name="Transform CSV to Object" metadata:id="f03e7f67-d84e-473f-9181-8afd61cd20e2">
 					<dw:input-payload mimeType="application/java" doc:sample="sample_data\list_csv.csv"/>
@@ -47,7 +62,7 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 }]]></dw:set-payload>
 				</dw:transform-message>
 			</when>
-			<when expression="#[message.inboundProperties.'originalFilename' contains '.json']">
+			<when expression="#[flowVars.tipoArchivo == 'json']">
 
 				<dw:transform-message doc:name="Transform JSON to Object" metadata:id="29567b72-171e-4cca-ad21-2a3c830c1e3b">
 					<dw:input-payload mimeType="application/json"/>
@@ -79,7 +94,7 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 				</dw:transform-message>
 
 			</when>
-			<when expression="#[message.inboundProperties.'originalFilename' contains '.xml']">
+			<when expression="#[flowVars.tipoArchivo == 'xml']">
 				<dw:transform-message doc:name="Transform XML to Object" metadata:id="d260b6d1-2ed6-4b61-9c31-e5caa6b335b4">
 					<dw:input-payload mimeType="application/xml"/>
 					<dw:set-payload><![CDATA[%dw 1.0
@@ -135,6 +150,7 @@ VALUES (
   #[flowVars.payload.idSolicitud]
 );]]></db:parameterized-query>
 			</db:insert>
+
 			<choice doc:name="Choice">
 				<when expression="#[flowVars.contenedor.trasladoFechaMaxEntrega != null &amp;&amp; flowVars.contenedor.trasladoCodigoPostal != null]">
 					<custom-transformer class="lib.DirectionIdTransformer" doc:name="Java Transformer"/>
