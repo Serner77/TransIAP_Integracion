@@ -15,14 +15,16 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 	<file:connector name="File1" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
 	<db:mysql-config name="MySQL_Configuration" host="127.0.0.1" port="3306" user="root" database="transiap" doc:name="MySQL Configuration"/>
 	<http:request-config name="HTTP_Request_Configuration" host="personales.upv.es" port="80" doc:name="HTTP Request Configuration"/>
+	<file:connector name="JSON" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+	<file:connector name="XML" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
 	<flow name="entradaLocal-Flow">
 		<file:inbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\documentos-intercambio" moveToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\procesados" connector-ref="File1" fileAge="1000" responseTimeout="10000" doc:name="File Listener"/>
 		<set-variable variableName="tipoArchivo" value="#[(message.inboundProperties.'originalFilename' contains '.json') ? 'json' : (message.inboundProperties.'originalFilename' contains '.xml') ? 'xml' : (message.inboundProperties.'originalFilename' contains '.csv') ? 'csv' : 'desconocido']" doc:name="Variable tipoArchivo"/>
 		<flow-ref name="procesarSolicitud-Flow" doc:name="Flow Reference"/>
 	</flow>
-	<flow name="transiap_integracionFlow">
+	<flow name="entradaHTTP-Flow">
 		<poll doc:name="Poll">
-			<fixed-frequency-scheduler frequency="20" timeUnit="SECONDS"/>
+			<fixed-frequency-scheduler frequency="20" timeUnit="SECONDS" startDelay="100"/>
 			<http:request config-ref="HTTP_Request_Configuration" path="/pedvalar/iap/TransIAP/SDC.json" method="GET" doc:name="HTTP"/>
 		</poll>
 		<object-to-string-transformer doc:name="Object to String"/>
@@ -30,12 +32,11 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 		<flow-ref name="procesarSolicitud-Flow" doc:name="Flow Reference"/>
 	</flow>
 	<flow name="procesarSolicitud-Flow">
-
 		<choice doc:name="Choice Router">
 			<when expression="#[flowVars.tipoArchivo == 'csv']">
 				<set-payload value="#[payload]" mimeType="text/plain" doc:name="Set Payload"/>
 				<dw:transform-message doc:name="Transform CSV to Object" metadata:id="f03e7f67-d84e-473f-9181-8afd61cd20e2">
-					<dw:input-payload mimeType="application/java" doc:sample="sample_data\list_csv.csv"/>
+					<dw:input-payload doc:sample="sample_data\list_csv.csv" mimeType="application/java"/>
 					<dw:set-payload><![CDATA[%dw 1.0
 %output application/java
 ---
@@ -63,7 +64,6 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 				</dw:transform-message>
 			</when>
 			<when expression="#[flowVars.tipoArchivo == 'json']">
-
 				<dw:transform-message doc:name="Transform JSON to Object" metadata:id="29567b72-171e-4cca-ad21-2a3c830c1e3b">
 					<dw:input-payload mimeType="application/json"/>
 					<dw:set-payload><![CDATA[%dw 1.0
@@ -92,7 +92,6 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 	})
 }]]></dw:set-payload>
 				</dw:transform-message>
-
 			</when>
 			<when expression="#[flowVars.tipoArchivo == 'xml']">
 				<dw:transform-message doc:name="Transform XML to Object" metadata:id="d260b6d1-2ed6-4b61-9c31-e5caa6b335b4">
@@ -129,14 +128,22 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
 			</otherwise>
 		</choice>
 		<set-variable variableName="payload" value="#[payload]" doc:name="Variable Object"/>
-		<db:insert config-ref="MySQL_Configuration" doc:name="Insert Solicitud Descarga">
-			<db:parameterized-query><![CDATA[INSERT INTO solicitud_descarga (id, fecha, naviera)
+		<scatter-gather doc:name="Scatter-Gather">
+			<processor-chain>
+				<db:insert config-ref="MySQL_Configuration" doc:name="Insert Solicitud Descarga">
+					<db:parameterized-query><![CDATA[INSERT INTO solicitud_descarga (id, fecha, naviera)
 VALUES (
   #[payload.idSolicitud],
   #[payload.fecha],
   #[payload.idAgencia]
 );]]></db:parameterized-query>
-		</db:insert>
+				</db:insert>
+				<flow-ref name="procesarContenedores-Flow" doc:name="Flow Reference"/>
+			</processor-chain>
+			<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
+		</scatter-gather>
+	</flow>
+	<flow name="procesarContenedores-Flow">
 		<foreach collection="#[flowVars.payload.contenedores]" doc:name="For Each">
 			<set-variable variableName="contenedor" value="#[payload]" doc:name="Variable contenedor"/>
 			<db:insert config-ref="MySQL_Configuration" doc:name="Insert Contenedor">
@@ -150,11 +157,9 @@ VALUES (
   #[flowVars.payload.idSolicitud]
 );]]></db:parameterized-query>
 			</db:insert>
-
 			<choice doc:name="Choice">
 				<when expression="#[flowVars.contenedor.trasladoFechaMaxEntrega != null &amp;&amp; flowVars.contenedor.trasladoCodigoPostal != null]">
 					<custom-transformer class="lib.DirectionIdTransformer" doc:name="Java Transformer"/>
-
 					<db:insert config-ref="MySQL_Configuration" doc:name="Insert Direccion">
 						<db:parameterized-query><![CDATA[INSERT IGNORE INTO direccion (id, direccion, cp, ciudad, codigo_pais) 
 VALUES (
@@ -164,8 +169,6 @@ VALUES (
     #[flowVars.contenedor.trasladoCiudad],
     #[flowVars.contenedor.trasladoPais]
 );]]></db:parameterized-query>
-
-
 					</db:insert>
 					<db:insert config-ref="MySQL_Configuration" doc:name="Insert Traslado">
 						<db:parameterized-query><![CDATA[INSERT INTO traslado (idt, fechaEntrega, estado, destino, contenedor, ultima_ubicacion)
@@ -178,13 +181,56 @@ VALUES (
 	NULL
 );]]></db:parameterized-query>
 					</db:insert>
-
 				</when>
 				<otherwise>
 					<logger message="Contenedor #[flowVars.contenedor.idContenedor] sin traslado." level="INFO" doc:name="Logger"/>
 				</otherwise>
 			</choice>
 		</foreach>
-
 	</flow>
+	<flow name="generarIDC-Flow">
+		<scatter-gather doc:name="Scatter-Gather">
+			<processor-chain>
+				<dw:transform-message doc:name="Transform Object to IDC.json" metadata:id="d6c76c44-67dd-4a62-a44a-d18aa1f9de8c">
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+  idd: "SNTN:IDC:" ++ payload.idSolicitud,
+  Puerto: "SNTN:PORT:" ++ payload.idPuerto,
+  Contenedores: payload.contenedores map ((c) -> {
+  	contenedor: "SNTN:DOCKER:" ++ c.idContenedor,
+   	agencia: "SNTN:AN:" ++ payload.idAgencia
+  })
+}]]></dw:set-payload>
+				</dw:transform-message>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" outputPattern="IDC.json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
+			</processor-chain>
+			<processor-chain>
+				<dw:transform-message doc:name="Transform Object to IDC.xml" metadata:id="c252fb71-4186-4c5d-97d2-f6381a3031ba">
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+{
+  SNTN_InformeDescargaContenedores @(
+    idd: "SNTN:IDC:" ++ payload.idSolicitud,
+    xmlns: "http://www.sntn.es/standards"
+  ): {
+    Puerto @(id: "SNTN:PORT:" ++ payload.idPuerto): {},
+    Contenedores: {
+      (payload.contenedores map ((contenedor) -> {
+        Contenedor @(
+          id: "SNTN:DOCKER:" ++ contenedor.idContenedor,
+          agencia: "SNTN:AN:" ++ payload.idAgencia
+        ): {}
+      }))
+    }
+  }
+}]]></dw:set-payload>
+				</dw:transform-message>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" outputPattern="IDC.xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
+			</processor-chain>
+		</scatter-gather>
+	</flow>
+
 </mule>
