@@ -44,25 +44,27 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 %output application/java
 ---
 {
-    idSolicitud: ((payload splitBy "\n")[0] splitBy ":")[2],
-    fecha: now as :string {format: "dd/MM/yyyy HH:mm:ss"},
-    idPuerto: (((payload splitBy "\n")[1] splitBy ":")[2] splitBy ",")[0],
-    nombrePuerto: ((payload splitBy "\n")[1] splitBy ", ")[1],
-    idAgencia: (((payload splitBy "\n")[2] splitBy ":")[2] splitBy ",")[0],
-    nombreAgencia: ((payload splitBy "\n")[2] splitBy ", ")[1],
-    paisAgencia: ((payload splitBy "\n")[2] splitBy ", ")[2],
-    contenedores: (payload splitBy "\n")[3 to -1] map ((line, index) -> {
-        idContenedor: ((line splitBy ":")[2] splitBy ", ")[0],
-        tipoContenedor: (line splitBy ", ")[1],
-        pesoContenedor: (line splitBy ", ")[2],
-        precintoContenedor: (line splitBy ", ")[3],
-        dimensionesContenedor: (line splitBy ", ")[4],
-        trasladoFechaMaxEntrega: (line splitBy ", ")[5],
-        trasladoDireccion: (((line splitBy /,(?=(?:[^"]*"[^"]*")*[^"]*$)/)[6]) default "") replace /\"/ with "",
-        trasladoCodigoPostal: (line splitBy ", ")[8],
-        trasladoCiudad: (line splitBy ", ")[9],
-        trasladoPais: (line splitBy ", ")[10]
-    })
+idSolicitud: (
+    ((payload splitBy "\n")[0] splitBy ":")[2] default ""
+) replace /\r/ with "",
+fecha: now as :string {format: "dd/MM/yyyy HH:mm:ss"},
+idPuerto: (((payload splitBy "\n")[1] splitBy ":")[2] splitBy ",")[0],
+nombrePuerto: ((payload splitBy "\n")[1] splitBy ", ")[1],
+idAgencia: (((payload splitBy "\n")[2] splitBy ":")[2] splitBy ",")[0],
+nombreAgencia: ((payload splitBy "\n")[2] splitBy ", ")[1],
+paisAgencia: ((payload splitBy "\n")[2] splitBy ", ")[2],
+contenedores: (payload splitBy "\n")[3 to -1] map ((line, index) -> {
+idContenedor: ((line splitBy ":")[2] splitBy ", ")[0],
+tipoContenedor: (line splitBy ", ")[1],
+pesoContenedor: (line splitBy ", ")[2],
+precintoContenedor: (line splitBy ", ")[3],
+dimensionesContenedor: (line splitBy ", ")[4],
+trasladoFechaMaxEntrega: (line splitBy ", ")[5],
+trasladoDireccion: (((line splitBy /,(?=(?:[^"]*"[^"]*")*[^"]*$)/)[6]) default "") replace /\"/ with "",
+trasladoCodigoPostal: (line splitBy ", ")[8],
+trasladoCiudad: (line splitBy ", ")[9],
+trasladoPais: (line splitBy ", ")[10]
+})
 }]]></dw:set-payload>
 				</dw:transform-message>
 			</when>
@@ -143,15 +145,8 @@ VALUES (
 				</db:insert>
 				<flow-ref name="procesarContenedores-Flow" doc:name="Flow Reference"/>
 			</processor-chain>
-			<processor-chain>
-				<set-variable variableName="idSolicitud" value="#[payload.idSolicitud]" doc:name="Variable File"/>
-				<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
-			</processor-chain>
-			<processor-chain>
-				<set-variable variableName="idSolicitud" value="#[payload.idSolicitud]" doc:name="Variable File"/>
-				<flow-ref name="generarITC-Flow" doc:name="Flow Reference"/>
-			</processor-chain>
-
+			<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
+			<flow-ref name="generarITC-Flow" doc:name="Flow Reference"/>
 		</scatter-gather>
 	</flow>
 	<flow name="procesarContenedores-Flow">
@@ -215,7 +210,7 @@ VALUES (
 	})
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.idSolicitud].json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.payload.idSolicitud].json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 			<processor-chain>
 				<dw:transform-message doc:name="Transform Object to IDC.xml" metadata:id="c252fb71-4186-4c5d-97d2-f6381a3031ba">
@@ -239,64 +234,71 @@ VALUES (
   }
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.idSolicitud].xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.payload.idSolicitud].xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 		</scatter-gather>
 	</flow>
 	<flow name="generarITC-Flow">
 		<scatter-gather doc:name="Scatter-Gather-ITC">
 			<processor-chain>
+				<logger message="#[payload]" level="INFO" doc:name="Logger"/>
 				<dw:transform-message doc:name="Transform Object to ITC.json" metadata:id="57c9dab1-f3d6-456a-bd14-023ae59a914c">
 					<dw:input-payload mimeType="application/java"/>
 					<dw:set-payload><![CDATA[%dw 1.0
 %output application/json
+%var idAgenciaRaiz = payload.idAgencia
 ---
 {
-  idd: "SNTN:ITC:" ++ payload.idSolicitud,
-  Puerto: "SNTN:PORT:" ++ payload.idPuerto,
-  SolicitudesTraslado: [
-    {
-      agencia: "SNTN:AN:" ++ payload.idAgencia,
-      Contenedores: payload.contenedores
-        filter ((c) -> c.trasladoDireccion != null or c.trasladoFechaMaxEntrega != null or c.trasladoCiudad != null)
-        map ((c) -> "SNTN:DOCKER:" ++ c.idContenedor)
-    }
-  ]
+    idd: "SNTN:ITC:" ++ (payload.idSolicitud as :string), 
+    Puerto: "SNTN:PORT:" ++ (payload.idPuerto as :string),
+    SolicitudesTraslado: payload.contenedores 
+        filter ((c) -> (c.trasladoDireccion != null and c.trasladoDireccion != "") or 
+                        (c.trasladoFechaMaxEntrega != null and c.trasladoFechaMaxEntrega != "") or 
+                        (c.trasladoCiudad != null and c.trasladoCiudad != ""))
+        
+        map {
+            contenedor: "SNTN:DOCKER:" ++ $.idContenedor,
+            agencia: "SNTN:AN:" ++ ($.idAgencia default idAgenciaRaiz)
+        }
 }]]></dw:set-payload>
 				</dw:transform-message>
 
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.idSolicitud].json" connector-ref="JSON-ITC" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.payload.idSolicitud].json" connector-ref="JSON-ITC" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 			<processor-chain>
 				<dw:transform-message doc:name="Transform Object to ITC.xml" metadata:id="67aa5fce-002c-47c9-82d4-179caa03e7b0">
 					<dw:input-payload mimeType="application/java"/>
 					<dw:set-payload><![CDATA[%dw 1.0
 %output application/xml
+%var idAgenciaRaiz = payload.idAgencia
 ---
 {
-  SNTN_InformeTrasladoContenedores @(
-    idd: "SNTN:ITC:" ++ payload.idSolicitud,
-    xmlns: "http://www.sntn.es/standards"
-  ): {
-    Puerto @(id: "SNTN:PORT:" ++ payload.idPuerto): {},
-    SolicitudesTraslado: {
-      (
-        payload.contenedores
-          filter ((c) -> c.trasladoDireccion != null or c.trasladoFechaMaxEntrega != null or c.trasladoCiudad != null)
-          map ((c) -> {
-            Contenedor @(
-              id: "SNTN:DOCKER:" ++ c.idContenedor,
-              agencia: "SNTN:AN:" ++ payload.idAgencia
-            ): {}
-          })
-      )
+    SNTN_InformeTrasladoContenedores @(
+        idd: "SNTN:ITC:" ++ (payload.idSolicitud as :string),
+        xmlns: "http://www.sntn.es/standards"
+    ): {
+        Puerto @(id: "SNTN:PORT:" ++ (payload.idPuerto as :string)): {},
+        SolicitudesTraslado: {
+            (
+                payload.contenedores
+                    filter ((c) -> (c.trasladoDireccion != null and c.trasladoDireccion != "") or 
+                                    (c.trasladoFechaMaxEntrega != null and c.trasladoFechaMaxEntrega != "") or 
+                                    (c.trasladoCiudad != null and c.trasladoCiudad != ""))
+                    
+                    map ((c) -> {
+                        Contenedor @(
+                            id: "SNTN:DOCKER:" ++ c.idContenedor,
+                            agencia: "SNTN:AN:" ++ (c.idAgencia default idAgenciaRaiz)
+                        ): {}
+                    })
+            )
+        }
     }
-  }
 }
 ]]></dw:set-payload>
 				</dw:transform-message>
 
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.idSolicitud].xml" connector-ref="XML-ITC" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.payload.idSolicitud].xml" connector-ref="XML-ITC" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 		</scatter-gather>
 	</flow>
