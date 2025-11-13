@@ -143,8 +143,15 @@ VALUES (
 				</db:insert>
 				<flow-ref name="procesarContenedores-Flow" doc:name="Flow Reference"/>
 			</processor-chain>
-			<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
-			<flow-ref name="generarITC-Flow" doc:name="Flow Reference"/>
+			<processor-chain>
+				<set-variable variableName="idSolicitud" value="#[payload.idSolicitud]" doc:name="Variable File"/>
+				<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
+			</processor-chain>
+			<processor-chain>
+				<set-variable variableName="idSolicitud" value="#[payload.idSolicitud]" doc:name="Variable File"/>
+				<flow-ref name="generarITC-Flow" doc:name="Flow Reference"/>
+			</processor-chain>
+
 		</scatter-gather>
 	</flow>
 	<flow name="procesarContenedores-Flow">
@@ -208,7 +215,7 @@ VALUES (
 	})
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC.json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.idSolicitud].json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 			<processor-chain>
 				<dw:transform-message doc:name="Transform Object to IDC.xml" metadata:id="c252fb71-4186-4c5d-97d2-f6381a3031ba">
@@ -232,7 +239,7 @@ VALUES (
   }
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC.xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC-#[flowVars.idSolicitud].xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 		</scatter-gather>
 	</flow>
@@ -258,7 +265,7 @@ VALUES (
 }]]></dw:set-payload>
 				</dw:transform-message>
 
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC.json" connector-ref="JSON-ITC" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.idSolicitud].json" connector-ref="JSON-ITC" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 			<processor-chain>
 				<dw:transform-message doc:name="Transform Object to ITC.xml" metadata:id="67aa5fce-002c-47c9-82d4-179caa03e7b0">
@@ -289,7 +296,7 @@ VALUES (
 ]]></dw:set-payload>
 				</dw:transform-message>
 
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC.xml" connector-ref="XML-ITC" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC-#[flowVars.idSolicitud].xml" connector-ref="XML-ITC" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 		</scatter-gather>
 	</flow>
