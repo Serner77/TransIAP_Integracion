@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -10,13 +10,16 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
-http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
 	<file:connector name="File" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
 	<file:connector name="File1" autoDelete="true" streaming="true" validateConnections="true" doc:name="File"/>
 	<db:mysql-config name="MySQL_Configuration" host="127.0.0.1" port="3306" user="root" database="transiap" doc:name="MySQL Configuration"/>
 	<http:request-config name="HTTP_Request_Configuration" host="personales.upv.es" port="80" doc:name="HTTP Request Configuration"/>
-	<file:connector name="JSON" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
-	<file:connector name="XML" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+	<file:connector name="JSON" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+	<file:connector name="XML" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+	<file:connector name="JSON-ITC" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
+	<file:connector name="XML-ITC" writeToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" autoDelete="false" streaming="true" validateConnections="true" doc:name="File"/>
 	<flow name="entradaLocal-Flow">
 		<file:inbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\documentos-intercambio" moveToDirectory="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\transiap_ficheros\procesados" connector-ref="File1" fileAge="1000" responseTimeout="10000" doc:name="File Listener"/>
 		<set-variable variableName="tipoArchivo" value="#[(message.inboundProperties.'originalFilename' contains '.json') ? 'json' : (message.inboundProperties.'originalFilename' contains '.xml') ? 'xml' : (message.inboundProperties.'originalFilename' contains '.csv') ? 'csv' : 'desconocido']" doc:name="Variable tipoArchivo"/>
@@ -141,6 +144,7 @@ VALUES (
 				<flow-ref name="procesarContenedores-Flow" doc:name="Flow Reference"/>
 			</processor-chain>
 			<flow-ref name="generarIDC-Flow" doc:name="Flow Reference"/>
+			<flow-ref name="generarITC-Flow" doc:name="Flow Reference"/>
 		</scatter-gather>
 	</flow>
 	<flow name="procesarContenedores-Flow">
@@ -196,15 +200,15 @@ VALUES (
 %output application/json
 ---
 {
-  idd: "SNTN:IDC:" ++ payload.idSolicitud,
-  Puerto: "SNTN:PORT:" ++ payload.idPuerto,
-  Contenedores: payload.contenedores map ((c) -> {
-  	contenedor: "SNTN:DOCKER:" ++ c.idContenedor,
-   	agencia: "SNTN:AN:" ++ payload.idAgencia
-  })
+	idd: "SNTN:IDC:" ++ payload.idSolicitud,
+	Puerto: "SNTN:PORT:" ++ payload.idPuerto,
+	Contenedores: payload.contenedores map ((c) -> {
+		contenedor: "SNTN:DOCKER:" ++ c.idContenedor,
+		agencia: "SNTN:AN:" ++ payload.idAgencia
+	})
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" outputPattern="IDC.json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC.json" connector-ref="JSON" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 			<processor-chain>
 				<dw:transform-message doc:name="Transform Object to IDC.xml" metadata:id="c252fb71-4186-4c5d-97d2-f6381a3031ba">
@@ -228,7 +232,64 @@ VALUES (
   }
 }]]></dw:set-payload>
 				</dw:transform-message>
-				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes" outputPattern="IDC.xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\IDC" outputPattern="IDC.xml" connector-ref="XML" responseTimeout="10000" doc:name="File"/>
+			</processor-chain>
+		</scatter-gather>
+	</flow>
+	<flow name="generarITC-Flow">
+		<scatter-gather doc:name="Scatter-Gather-ITC">
+			<processor-chain>
+				<dw:transform-message doc:name="Transform Object to ITC.json" metadata:id="57c9dab1-f3d6-456a-bd14-023ae59a914c">
+					<dw:input-payload mimeType="application/java"/>
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+  idd: "SNTN:ITC:" ++ payload.idSolicitud,
+  Puerto: "SNTN:PORT:" ++ payload.idPuerto,
+  SolicitudesTraslado: [
+    {
+      agencia: "SNTN:AN:" ++ payload.idAgencia,
+      Contenedores: payload.contenedores
+        filter ((c) -> c.trasladoDireccion != null or c.trasladoFechaMaxEntrega != null or c.trasladoCiudad != null)
+        map ((c) -> "SNTN:DOCKER:" ++ c.idContenedor)
+    }
+  ]
+}]]></dw:set-payload>
+				</dw:transform-message>
+
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC.json" connector-ref="JSON-ITC" responseTimeout="10000" doc:name="File"/>
+			</processor-chain>
+			<processor-chain>
+				<dw:transform-message doc:name="Transform Object to ITC.xml" metadata:id="67aa5fce-002c-47c9-82d4-179caa03e7b0">
+					<dw:input-payload mimeType="application/java"/>
+					<dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+{
+  SNTN_InformeTrasladoContenedores @(
+    idd: "SNTN:ITC:" ++ payload.idSolicitud,
+    xmlns: "http://www.sntn.es/standards"
+  ): {
+    Puerto @(id: "SNTN:PORT:" ++ payload.idPuerto): {},
+    SolicitudesTraslado: {
+      (
+        payload.contenedores
+          filter ((c) -> c.trasladoDireccion != null or c.trasladoFechaMaxEntrega != null or c.trasladoCiudad != null)
+          map ((c) -> {
+            Contenedor @(
+              id: "SNTN:DOCKER:" ++ c.idContenedor,
+              agencia: "SNTN:AN:" ++ payload.idAgencia
+            ): {}
+          })
+      )
+    }
+  }
+}
+]]></dw:set-payload>
+				</dw:transform-message>
+
+				<file:outbound-endpoint path="C:\Users\Administrador.WIN-2O4P6U7CI32\AnypointStudio\workspace\informes\ITC" outputPattern="ITC.xml" connector-ref="XML-ITC" responseTimeout="10000" doc:name="File"/>
 			</processor-chain>
 		</scatter-gather>
 	</flow>

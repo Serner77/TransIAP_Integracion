@@ -8,9 +8,9 @@
     "outputMessageMetadata": {
         "messagePayload": {
             "connectorName": "#_custom_mule_metadata_type_#",
-            "typeId": "IDC_json"
+            "typeId": "IST_json"
         }
     },
-    "id": "d6c76c44-67dd-4a62-a44a-d18aa1f9de8c",
+    "id": "57c9dab1-f3d6-456a-bd14-023ae59a914c",
     "version": "5.2.0.0"
 }
