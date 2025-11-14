@@ -27,7 +27,7 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
 	</flow>
 	<flow name="entradaHTTP-Flow">
 		<poll doc:name="Poll">
-			<fixed-frequency-scheduler frequency="20" timeUnit="SECONDS" startDelay="100"/>
+			<fixed-frequency-scheduler frequency="1000" timeUnit="SECONDS" />
 			<http:request config-ref="HTTP_Request_Configuration" path="/pedvalar/iap/TransIAP/SDC.json" method="GET" doc:name="HTTP"/>
 		</poll>
 		<object-to-string-transformer doc:name="Object to String"/>
@@ -60,7 +60,11 @@ pesoContenedor: (line splitBy ", ")[2],
 precintoContenedor: (line splitBy ", ")[3],
 dimensionesContenedor: (line splitBy ", ")[4],
 trasladoFechaMaxEntrega: (line splitBy ", ")[5],
-trasladoDireccion: (((line splitBy /,(?=(?:[^"]*"[^"]*")*[^"]*$)/)[6]) default "") replace /\"/ with "",
+trasladoDireccion:
+    (
+        (((line splitBy /,(?=(?:[^"]*"[^"]*")*[^"]*$)/)[6]) default "")
+            replace /\"/ with ""
+    ),
 trasladoCodigoPostal: (line splitBy ", ")[8],
 trasladoCiudad: (line splitBy ", ")[9],
 trasladoPais: (line splitBy ", ")[10]
@@ -170,11 +174,12 @@ VALUES (
 						<db:parameterized-query><![CDATA[INSERT IGNORE INTO direccion (id, direccion, cp, ciudad, codigo_pais) 
 VALUES (
     #[flowVars.generatedDirectionId], 
-    #[flowVars.contenedor.trasladoDireccion], 
+    TRIM(#[flowVars.contenedor.trasladoDireccion]), 
     #[flowVars.contenedor.trasladoCodigoPostal],
     #[flowVars.contenedor.trasladoCiudad],
     #[flowVars.contenedor.trasladoPais]
 );]]></db:parameterized-query>
+
 					</db:insert>
 					<db:insert config-ref="MySQL_Configuration" doc:name="Insert Traslado">
 						<db:parameterized-query><![CDATA[INSERT INTO traslado (idt, fechaEntrega, estado, destino, contenedor, ultima_ubicacion)
@@ -241,7 +246,7 @@ VALUES (
 	<flow name="generarITC-Flow">
 		<scatter-gather doc:name="Scatter-Gather-ITC">
 			<processor-chain>
-				<logger message="#[payload]" level="INFO" doc:name="Logger"/>
+
 				<dw:transform-message doc:name="Transform Object to ITC.json" metadata:id="57c9dab1-f3d6-456a-bd14-023ae59a914c">
 					<dw:input-payload mimeType="application/java"/>
 					<dw:set-payload><![CDATA[%dw 1.0
